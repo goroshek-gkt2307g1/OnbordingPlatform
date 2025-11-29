@@ -66,7 +66,7 @@ public partial class VlasovaAaКурсовая1Context : DbContext
             entity.Property(e => e.HireDate).HasColumnName("hire_date");
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
-                .HasColumnName("password_hash");
+                .HasColumnName("password");
             entity.Property(e => e.RoleIdFk).HasColumnName("role_ID_FK");
             entity.Property(e => e.Username)
                 .HasMaxLength(50)

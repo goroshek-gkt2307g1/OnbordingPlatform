@@ -113,7 +113,7 @@
                                       FontSize="18" 
                                       FontWeight="Bold"
                                       Margin="0,0,0,5"/>
-                            <TextBlock Text="Всего пользователей в системе" 
+                            <TextBlock Text="Количество всех пользователей в системе" 
                                       FontSize="12"
                                       Foreground="Gray"/>
                         </StackPanel>
@@ -143,10 +143,13 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Username" 
                                                 Binding="{Binding Username}" 
-                                                Width="150"/>
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Password" 
+                                                Binding="{Binding Password}" 
+                                                Width="100"/>       
                             <DataGridTextColumn Header="ФИО" 
                                                 Binding="{Binding FullName}" 
-                                                Width="200"/>
+                                                Width="230"/>
                             <DataGridTextColumn Header="Роль" 
                                                 Binding="{Binding RoleIdFkNavigation.RoleName}" 
                                                 Width="120"/>
@@ -160,10 +163,11 @@
                             <DataGridTemplateColumn Header="Действия" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Просмотр" 
-                                                Command="{Binding DataContext.ViewUserCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <Button Content="Удалить" 
+                                                Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
                                                 Margin="2" Padding="8,4"
-                                                Background="LightBlue"
+                                                Background="#AC4242"
                                                 FontSize="12"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -193,6 +197,109 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </StackPanel> -->
+        </Grid>
+        
+        <!--модалка добавления -->
+        <Grid Grid.ColumnSpan="2"
+              Visibility="{Binding ShowAddUserModalVisibility}"
+              Panel.ZIndex="1000"
+              Background="#80000000">
+
+            <Border Width="400" 
+            Height="500" 
+            Background="White" 
+            CornerRadius="10"
+            BorderBrush="LightGray"
+            BorderThickness="1"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!--заголовок -->
+                    <TextBlock Grid.Row="0" 
+                       Text="Добавить нового пользователя" 
+                       FontSize="18" 
+                       FontWeight="Bold"
+                       Margin="0,0,0,20"/>
+
+                    <!--поля формы -->
+                    <StackPanel Grid.Row="1" Orientation="Vertical">
+                        <!--Username -->
+                        <StackPanel>
+                            <TextBlock Text="Логин:" FontWeight="SemiBold"/>
+                            <TextBox x:Name="UsernameTextBox" 
+                                 Height="28" 
+                                 Padding="5"
+                                 Text="{Binding NewUser.Username, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <!--пароль -->
+                        <StackPanel>
+                            <TextBlock Text="Пароль:" FontWeight="SemiBold"/>
+                            <TextBox x:Name="PasswordTextBox" 
+                                Height="28" 
+                                Padding="5"
+                                Text="{Binding NewUser.Password, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <!--ФИО -->
+                        <StackPanel>
+                            <TextBlock Text="ФИО:" FontWeight="SemiBold"/>
+                            <TextBox x:Name="FullNameTextBox" 
+                                 Height="28" 
+                                 Padding="5"
+                                 Text="{Binding NewUser.FullName, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <!--роль -->
+                        <StackPanel>
+                            <TextBlock Text="Роль:" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="RoleComboBox" 
+                                 Height="28"
+                                 DisplayMemberPath="RoleName"
+                                 SelectedValuePath="RoleId"
+                                 SelectedValue="{Binding NewUser.RoleIdFk}"
+                                 ItemsSource="{Binding AvailableRoles}"/>
+                        </StackPanel>
+
+                        <!--описание -->
+                        <StackPanel>
+                            <TextBlock Text="Описание (необязательно):" FontWeight="SemiBold"/>
+                            <TextBox x:Name="DescriptionTextBox" 
+                                 Height="60" 
+                                 Padding="5"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Text="{Binding NewUser.AccountDescription, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!--кнопки -->
+                    <StackPanel Grid.Row="2"
+                                Orientation="Horizontal" 
+                                HorizontalAlignment="Right"
+                                Margin="0,20,0,0">
+                            <Button Content="Отмена" 
+                                Width="80" 
+                                Height="30"
+                                Command="{Binding CancelAddUserCommand}"
+                                Margin="0,0,10,0"/>
+                            <Button Content="Добавить" 
+                                Width="80" 
+                                Height="30"
+                                Command="{Binding ConfirmAddUserCommand}"
+                                Background="LightBlue"
+                                FontWeight="Bold"/> 
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Window>

@@ -8,9 +8,8 @@ namespace OnbordingPlatform.Views
         public AdminMainWindow()
         {
             InitializeComponent();
-            DataContext = new AdminMainViewModel();
-
-            this.Closed += (s, e) => Application.Current.Shutdown();
+            var viewModel = new AdminMainViewModel();
+            DataContext = viewModel;
         }
     }
 }
