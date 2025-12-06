@@ -24,13 +24,17 @@ namespace OnbordingPlatform.ViewModels
         public ICommand ProfileCommand { get; }
         public ICommand AddUserCommand { get; }
         public ICommand DeleteUserCommand { get; }
+        public ICommand EditUserCommand { get; }
         public ICommand ConfirmAddUserCommand { get; }
         public ICommand CancelAddUserCommand { get; }
+        public ICommand SaveEditCommand { get; }
+        public ICommand CancelEditCommand { get; }
 
         //visibility 
         private Visibility _showUsersVisibility = Visibility.Visible;
         private Visibility _showCoursesVisibility = Visibility.Collapsed;
         private Visibility _showAddUserModalVisibility = Visibility.Collapsed;
+        private Visibility _showEditUserModalVisibility = Visibility.Collapsed;
 
         public Visibility ShowUsersVisibility
         {
@@ -41,7 +45,7 @@ namespace OnbordingPlatform.ViewModels
         public Visibility ShowCoursesVisibility
         {
             get => _showCoursesVisibility;
-            set { _showCoursesVisibility= value; OnPropertyChanged(); }
+            set { _showCoursesVisibility = value; OnPropertyChanged(); }
         }
 
         public Visibility ShowAddUserModalVisibility
@@ -50,11 +54,31 @@ namespace OnbordingPlatform.ViewModels
             set { _showAddUserModalVisibility = value; OnPropertyChanged(); }
         }
 
+        public Visibility ShowEditUserModalVisibility
+        {
+            get => _showEditUserModalVisibility;
+            set { _showEditUserModalVisibility = value; OnPropertyChanged(); }
+        }
+
         private Account _newUser = new Account();
         public Account NewUser
         {
             get => _newUser;
             set { _newUser = value; OnPropertyChanged(); }
+        }
+
+        private Account _selectedUser = new Account();
+        public Account SelectedUser
+        {
+            get => _selectedUser;
+            set { _selectedUser = value; OnPropertyChanged(); }
+        }
+
+        private bool _isEditMode = false;
+        public bool IsEditMode
+        {
+            get => _isEditMode;
+            set { _isEditMode = value; OnPropertyChanged(); }
         }
 
         public ObservableCollection<Role> AvailableRoles { get; set; }
@@ -99,8 +123,11 @@ namespace OnbordingPlatform.ViewModels
             ProfileCommand = new MyCommand(Profile);
             AddUserCommand = new MyCommand(AddUser);
             DeleteUserCommand = new MyCommand<Account>(DeleteUser);
+            EditUserCommand = new MyCommand<Account>(EditUser);
             ConfirmAddUserCommand = new MyCommand(ConfirmAddUser);
             CancelAddUserCommand = new MyCommand(CancelAddUser);
+            SaveEditCommand = new MyCommand(SaveEdit);
+            CancelEditCommand = new MyCommand(CancelEdit);
 
             LoadUsersFromDatabase();
             LoadRolesAndStatuses();
@@ -110,7 +137,6 @@ namespace OnbordingPlatform.ViewModels
         {
             ShowAddUserModalVisibility = Visibility.Collapsed;
             NewUser = new Account();
-
         }
 
         private void ConfirmAddUser()
@@ -178,41 +204,14 @@ namespace OnbordingPlatform.ViewModels
                         MessageBoxButton.OK, MessageBoxImage.Information);
 
                     ShowAddUserModalVisibility = Visibility.Collapsed;
-                    NewUser = new Account(); // Очищаем форму
+                    NewUser = new Account();
                 }
             }
             catch (Exception ex)
             {
-                // Получаем детальную информацию об ошибке
-                string errorDetails = GetExceptionDetails(ex);
-                MessageBox.Show($"Ошибка при добавлении пользователя:\n\n{errorDetails}", "Ошибка",
+                MessageBox.Show($"Ошибка при добавлении пользователя: {ex.Message}", "Ошибка",
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        // Метод для получения детальной информации об исключении
-        private string GetExceptionDetails(Exception ex)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine($"Сообщение: {ex.Message}");
-
-            if (ex.InnerException != null)
-            {
-                sb.AppendLine($"Внутреннее исключение: {ex.InnerException.Message}");
-
-                // Для DbUpdateException получаем больше деталей
-                if (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx)
-                {
-                    sb.AppendLine($"Код ошибки SQL: {sqlEx.Number}");
-                    sb.AppendLine($"Процедура: {sqlEx.Procedure}");
-                    sb.AppendLine($"Строка: {sqlEx.LineNumber}");
-                }
-            }
-
-            sb.AppendLine($"Тип исключения: {ex.GetType().Name}");
-            sb.AppendLine($"Стек вызовов: {ex.StackTrace}");
-
-            return sb.ToString();
         }
 
         private void ShowUsers()
@@ -230,7 +229,6 @@ namespace OnbordingPlatform.ViewModels
             UsersButtonColor = Brushes.Transparent;
             CoursesButtonColor = Brushes.LightBlue;
         }
-
 
         private void Logout()
         {
@@ -256,6 +254,7 @@ namespace OnbordingPlatform.ViewModels
             }
             ShowAddUserModalVisibility = Visibility.Visible;
         }
+
         private void DeleteUser(Account userForDelete)
         {
             if (userForDelete == null) return;
@@ -267,7 +266,7 @@ namespace OnbordingPlatform.ViewModels
                 return;
             }
 
-            var result = MessageBox.Show($"Вы действительно хотите удалить {userForDelete.Username}?", "Удалить пользователя", 
+            var result = MessageBox.Show($"Вы действительно хотите удалить {userForDelete.Username}?", "Удалить пользователя",
                 MessageBoxButton.OKCancel, MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.OK)
@@ -290,23 +289,126 @@ namespace OnbordingPlatform.ViewModels
                         }
                     }
                 }
-
-                catch
+                catch (Exception ex)
                 {
-                    MessageBox.Show("Не удалось удалить пользователя!", "Ошибка",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Не удалось удалить пользователя: {ex.Message}", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            else return;
-
         }
 
+        private void EditUser(Account user)
+        {
+            if (user == null) return;
+
+            SelectedUser = new Account
+            {
+                AccountId = user.AccountId,
+                Username = user.Username,
+                Password = user.Password,
+                FullName = user.FullName,
+                RoleIdFk = user.RoleIdFk,
+                AccountStatusFk = user.AccountStatusFk,
+                AccountDescription = user.AccountDescription,
+                HireDate = user.HireDate
+            };
+
+            IsEditMode = true;
+            ShowEditUserModalVisibility = Visibility.Visible;
+        }
+
+        private void SaveEdit()
+        {
+            try
+            {
+                if (SelectedUser == null) return;
+
+                if (string.IsNullOrWhiteSpace(SelectedUser.Username))
+                {
+                    MessageBox.Show("Введите логин", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(SelectedUser.Password))
+                {
+                    MessageBox.Show("Введите пароль", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(SelectedUser.FullName))
+                {
+                    MessageBox.Show("Введите ФИО", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (SelectedUser.RoleIdFk == 0)
+                {
+                    MessageBox.Show("Выберите роль", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (SelectedUser.AccountStatusFk == 0)
+                {
+                    MessageBox.Show("Выберите статус", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                using (var context = new VlasovaAaКурсовая1Context())
+                {
+                    var userToUpdate = context.Accounts.Find(SelectedUser.AccountId);
+
+                    if (userToUpdate != null)
+                    {
+                        userToUpdate.Username = SelectedUser.Username;
+                        userToUpdate.Password = SelectedUser.Password;
+                        userToUpdate.FullName = SelectedUser.FullName;
+                        userToUpdate.RoleIdFk = SelectedUser.RoleIdFk;
+                        userToUpdate.AccountStatusFk = SelectedUser.AccountStatusFk;
+                        userToUpdate.AccountDescription = SelectedUser.AccountDescription;
+
+                        context.SaveChanges();
+
+                        var userInList = Users.FirstOrDefault(u => u.AccountId == SelectedUser.AccountId);
+                        if (userInList != null)
+                        {
+                            var updatedUser = context.Accounts
+                                .Include(a => a.RoleIdFkNavigation)
+                                .Include(a => a.AccountStatusFkNavigation)
+                                .FirstOrDefault(a => a.AccountId == SelectedUser.AccountId);
+
+                            if (updatedUser != null)
+                            {
+                                int index = Users.IndexOf(userInList);
+                                Users[index] = updatedUser;
+
+                                Users = new ObservableCollection<Account>(Users);
+                            }
+                        }
+
+                        MessageBox.Show("Данные пользователя успешно обновлены", "Успех",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+
+                        ShowEditUserModalVisibility = Visibility.Collapsed;
+                        SelectedUser = new Account();
+                        IsEditMode = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при обновлении пользователя: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CancelEdit()
+        {
+            ShowEditUserModalVisibility = Visibility.Collapsed;
+            SelectedUser = new Account();
+            IsEditMode = false;
+        }
 
         private void LoadUsersFromDatabase()
         {
             try
             {
-                using (var context = new VlasovaAaКурсовая1Context()) 
+                using (var context = new VlasovaAaКурсовая1Context())
                 {
                     var users = context.Accounts
                         .Include(a => a.RoleIdFkNavigation)
@@ -346,11 +448,10 @@ namespace OnbordingPlatform.ViewModels
             }
         }
 
-
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName = "")
         {
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
