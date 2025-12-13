@@ -10,4 +10,9 @@ public partial class CourseStatus
     public string StatusName { get; set; } = null!;
 
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
+    public static CourseStatus[] SeedData => new[]
+{
+        new CourseStatus { StatusName = "Publish" },
+        new CourseStatus { StatusName = "Archive" }
+    };
 }
