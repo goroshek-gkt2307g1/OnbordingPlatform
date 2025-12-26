@@ -15,7 +15,7 @@ public partial class Task
 
     public string? TaskDocument { get; set; }
 
-    public DateOnly DueDate { get; set; }
+    public DateTime DueDate { get; set; }
 
     public int CourseIdFk { get; set; }
 

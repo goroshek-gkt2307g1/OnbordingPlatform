@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OnbordingPlatform.Entities;
 
@@ -24,4 +25,16 @@ public partial class Course
     public virtual Account MentorIdFkNavigation { get; set; } = null!;
 
     public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
+
+    [NotMapped] // Указываем, что это свойство не маппится в БД
+    public int StudentsCount { get; set; }
+
+    [NotMapped]
+    public int TasksCount { get; set; }
+
+    [NotMapped]
+    public string StudentsCountText => StudentsCount.ToString();
+
+    [NotMapped]
+    public string TasksCountText => TasksCount.ToString();
 }
